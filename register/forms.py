@@ -11,4 +11,4 @@ class CustomUserUpdateForm(UserChangeForm):
     password = None  # Hides the password field
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name')
+        fields = ('username', 'email', 'first_name', 'last_name', 'currency')

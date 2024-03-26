@@ -16,4 +16,15 @@
         <button type="submit" name="change_password">Change Password</button>
     </form>
 </div>
+
+{% for transaction in pending_requests %}
+<div>
+    <p>Payment request from {{ transaction.sender.username }}: £{{ transaction.amount }}</p>
+    <a href="{% url 'respond_to_request' transaction.id 'accept' %}">Accept</a>
+    <a href="{% url 'respond_to_request' transaction.id 'reject' %}">Reject</a>
+</div>
+{% empty %}
+<p>No pending payment requests.</p>
+{% endfor %}
+
 {% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Transactions</h2>
+<h3>Sent Transactions</h3>
+{% for transaction in sent_transactions %}
+<p>{{ transaction }}</p>
+{% empty %}
+<p>No transactions.</p>
+{% endfor %}
+
+<h3>Received Transactions</h3>
+{% for transaction in received_transactions %}
+<p>{{ transaction }}</p>
+{% empty %}
+<p>No transactions.</p>
+{% endfor %}
+{% endblock %}

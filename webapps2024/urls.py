@@ -22,5 +22,6 @@ from register.views import home  # Adjust this import based on where you placed 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('register.urls')),  # Corrected: Include 'register.urls' at the root
+    path('', include('payapp.urls')),
     path('', home, name='home'),  # Add this line for the home page
 ]

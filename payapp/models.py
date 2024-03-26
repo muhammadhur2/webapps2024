@@ -10,7 +10,14 @@ class Transaction(models.Model):
         ('PAYMENT', 'Payment'),
         ('REQUEST', 'Request'),
     ]
+    TRANSACTION_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('ACCEPTED', 'Accepted'),
+        ('REJECTED', 'Rejected'),
+        ('COMPLETED', 'Completed'),
+    ]
     transaction_type = models.CharField(max_length=7, choices=TRANSACTION_TYPE_CHOICES, default='PAYMENT')
+    status = models.CharField(max_length=9, choices=TRANSACTION_STATUS_CHOICES, default='PENDING')
 
     def __str__(self):
-        return f"{self.sender} -> {self.recipient}: {self.amount}"
+        return f"{self.sender} -> {self.recipient}: {self.amount} [{self.transaction_type}, {self.status}]"
