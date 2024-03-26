@@ -6,6 +6,8 @@ from .forms import CustomUserCreationForm, CustomUserUpdateForm
 from payapp.models import Transaction
 from django.contrib import messages
 from django.db import transaction as db_transaction
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 
@@ -23,6 +25,16 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # Send welcome email
+            send_mail(
+                'Welcome to WebApp 2024!',
+                'Hello, thank you for registering with our app.',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+
             return redirect('home')  # Adjust the redirect to where you want users to go after registering
     else:
         form = CustomUserCreationForm()

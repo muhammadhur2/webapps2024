@@ -4,14 +4,26 @@
 <h2>Transactions</h2>
 <h3>Sent Transactions</h3>
 {% for transaction in sent_transactions %}
-<p>{{ transaction }}</p>
+<p>
+    {% if transaction.transaction_type == 'REQUEST' and transaction.status == 'PENDING' %}
+    Payment request to {{ transaction.recipient.username }}: £{{ transaction.amount }} (Pending)
+    {% elif transaction.transaction_type == 'REQUEST' and transaction.status == 'COMPLETED' %}
+    Payment to {{ transaction.recipient.username }}: £{{ transaction.amount }} (Completed)
+    {% else %}
+    {{ transaction }}
+    <a href="{% url 'transaction_invoice' transaction.id %}">View Invoice</a>
+    {% endif %}
+</p>
 {% empty %}
 <p>No transactions.</p>
 {% endfor %}
 
+
 <h3>Received Transactions</h3>
 {% for transaction in received_transactions %}
-<p>{{ transaction }}</p>
+<p>{{ transaction }}
+    <a href="{% url 'transaction_invoice' transaction.id %}">View Invoice</a>
+</p>
 {% empty %}
 <p>No transactions.</p>
 {% endfor %}
