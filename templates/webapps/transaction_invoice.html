@@ -5,8 +5,13 @@
     <h2>Transaction Invoice</h2>
     <p><strong>Transaction ID:</strong> {{ transaction.id }}</p>
     <p><strong>Date:</strong> {{ transaction.created_at }}</p>
+    {% if transaction.get_transaction_type_display == 'Payment' %}
     <p><strong>From:</strong> {{ transaction.sender.username }}</p>
     <p><strong>To:</strong> {{ transaction.recipient.username }}</p>
+    {% else %}
+    <p><strong>From:</strong> {{ transaction.recipient.username }}</p>
+    <p><strong>To:</strong> {{ transaction.sender.username }}</p>
+    {% endif %}
     <p><strong>Amount:</strong> £{{ transaction.amount }}</p>
     <p><strong>Type:</strong> {{ transaction.get_transaction_type_display }}</p>
     <p><strong>Status:</strong> {{ transaction.get_status_display }}</p>

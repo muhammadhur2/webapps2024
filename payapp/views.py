@@ -6,6 +6,13 @@ from .models import Transaction, CustomUser
 from .forms import PaymentForm, PaymentRequestForm
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db.models import Q
+from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
+from payapp.utils import convert_currency
+
+
+
+
 
 @login_required
 def make_payment_view(request):
@@ -66,30 +73,54 @@ def request_payment_view(request):
     return render(request, 'webapps/request_payment.html', {'form': form})
 
 
-
-@login_required
 def transaction_notifications(request):
-    sent_transactions = Transaction.objects.filter(sender=request.user)
+    sent_transactions = Transaction.objects.filter(
+        Q(sender=request.user, transaction_type="PAYMENT") | 
+        Q(recipient=request.user, transaction_type="REQUEST")
+    )    
+
+    print(sent_transactions)
     received_transactions = Transaction.objects.filter(recipient=request.user)
 
-    # Debug: print to console to verify if queries are returning transactions
-    print(f"Sent Transactions: {sent_transactions}")
-    print(f"Received Transactions: {received_transactions}")
+    received_transactions = Transaction.objects.filter(
+        Q(recipient=request.user, transaction_type="PAYMENT") | 
+        Q(sender=request.user, transaction_type="REQUEST")
+    )
 
+    print()
     return render(request, 'webapps/transaction_notifications.html', {
         'sent_transactions': sent_transactions,
         'received_transactions': received_transactions,
     })
 
-def transaction_invoice(request, transaction_id):
-    # Attempt to retrieve the transaction where the current user is either the sender or the recipient
-    transaction = get_object_or_404(Transaction, id=transaction_id,
-                                    sender=request.user)  # Try to get as sender first
 
-    # If the above doesn't raise a 404 but the user is not the sender,
-    # check if the user is the recipient instead.
-    # This avoids the issue with the `or` operation.
-    if transaction.sender != request.user:
-        transaction = get_object_or_404(Transaction, id=transaction_id, recipient=request.user)
+
+def transaction_invoice(request, transaction_id):
+    try:
+        # Attempt to retrieve the transaction where the current user is either the sender or the recipient
+        transaction = Transaction.objects.get(id=transaction_id,
+                                              sender=request.user)
+    except Transaction.DoesNotExist:
+        # If the transaction does not exist with the user as the sender, check if the user is the recipient
+        transaction = get_object_or_404(Transaction, id=transaction_id,
+                                        recipient=request.user)
 
     return render(request, 'webapps/transaction_invoice.html', {'transaction': transaction})
+
+
+
+
+def conversion_service(request, currency1, currency2, amount):
+    print("xyz")
+    try:
+        amount = float(amount)
+    except ValueError:
+        return HttpResponseBadRequest("Amount must be a number.")
+
+    supported_currencies = ['GBP', 'USD', 'EUR']
+    
+    if currency1 not in supported_currencies or currency2 not in supported_currencies:
+        return JsonResponse({'error': 'One or both currencies are not supported.'}, status=400)
+    
+    converted_amount = convert_currency(amount, currency1, currency2)
+    return JsonResponse({'converted_amount': converted_amount})

@@ -8,25 +8,75 @@ from django.contrib import messages
 from django.db import transaction as db_transaction
 from django.core.mail import send_mail
 from django.conf import settings
+from payapp.utils import convert_currency
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.test import Client
 
 
 
 
 
 
-from django.http import HttpResponse
+
+
+
 
 def home(request):
     return HttpResponse("Welcome to WebApp 2024!")
+
+# def register(request):
+    # if request.method == 'POST':
+    #     form = CustomUserCreationForm(request.POST)
+    #     if form.is_valid():
+            
+    #         user = form.save(commit=False)  
+    #         selected_currency = form.cleaned_data['currency']
+    #         initial_balance_in_gbp = 1000  
+    #         user.balance = convert_currency(initial_balance_in_gbp, 'GBP', selected_currency)
+    #         user.currency = selected_currency
+    #         user.save()  
+
+    #         login(request, user)
+            
+    #         send_mail(
+    #             'Welcome to WebApp 2024!',
+    #             'Hello, thank you for registering with our app.',
+    #             settings.DEFAULT_FROM_EMAIL,
+    #             [user.email],
+    #             fail_silently=False,
+    #         )
+
+    #         return redirect('home')
+    # else:
+    #     form = CustomUserCreationForm()
+
+    # return render(request, 'register/register.html', {'form': form})
 
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
+            user = form.save(commit=False)
+            selected_currency = form.cleaned_data['currency']
+            initial_balance_in_gbp = 1000
 
-            # Send welcome email
+            # Instead of using the requests library, you can use the Django test client
+            # or call the view directly since it's an internal service.
+            client = Client(SERVER_NAME='localhost')
+            response = client.get(f'/conversion/GBP/{selected_currency}/{initial_balance_in_gbp}/')
+
+            if response.status_code == 200:
+                # Assuming the conversion service returns a JSON object with 'converted_amount'
+                user.balance = response.json().get('converted_amount', initial_balance_in_gbp)
+            else:
+                # Provide a message to the user that the conversion service is currently unavailable
+                messages.error(request, "The currency conversion service is currently unavailable. Please try again later.")
+                return render(request, 'register/register.html', {'form': form})
+
+            user.currency = selected_currency
+            user.save()
+            
+            login(request, user)
             send_mail(
                 'Welcome to WebApp 2024!',
                 'Hello, thank you for registering with our app.',
@@ -35,11 +85,12 @@ def register(request):
                 fail_silently=False,
             )
 
-            return redirect('home')  # Adjust the redirect to where you want users to go after registering
+            messages.success(request, "You have been successfully registered.")
+            return redirect('home')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'register/register.html', {'form': form})
 
+    return render(request, 'register/register.html', {'form': form})
 
 @login_required
 def profile(request):
@@ -81,27 +132,25 @@ def respond_to_request(request, transaction_id, action):
             sender = transaction.sender
             recipient = transaction.recipient
 
-            # Check if the sender has enough balance
-            if sender.balance >= transaction.amount:
-                sender.balance -= transaction.amount
-                recipient.balance += transaction.amount
-                sender.save()
+            # Ensure that the recipient (Y) is the one making the payment to the sender (X), when accepting the request
+            if recipient.balance >= transaction.amount:  # Check if Y has enough balance
+                recipient.balance -= transaction.amount  # Deduct from Y's account
+                sender.balance += transaction.amount  # Add to X's account
                 recipient.save()
+                sender.save()
 
                 transaction.status = 'COMPLETED'  # Update the transaction status
                 transaction.save()
 
                 messages.success(request, "Payment request accepted.")
             else:
-                messages.error(request, "Sender has insufficient funds.")
-
+                messages.error(request, "You have insufficient funds.")
     elif action == 'reject':
         # Logic for rejecting the payment request
         transaction.status = 'REJECTED'  # Update the transaction status
         transaction.save()
 
         messages.info(request, "Payment request rejected.")
-
     else:
         messages.error(request, "Invalid action.")
 

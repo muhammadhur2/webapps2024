@@ -17,14 +17,23 @@
     </form>
 </div>
 
-{% for transaction in pending_requests %}
-<div>
-    <p>Payment request from {{ transaction.sender.username }}: £{{ transaction.amount }}</p>
-    <a href="{% url 'respond_to_request' transaction.id 'accept' %}">Accept</a>
-    <a href="{% url 'respond_to_request' transaction.id 'reject' %}">Reject</a>
-</div>
-{% empty %}
-<p>No pending payment requests.</p>
-{% endfor %}
+<h2>Pending Payment Requests</h2>
+<table>
+    <tr>
+        <th>From</th>
+        <th>Amount</th>
+        <th>Actions</th>
+    </tr>
+    {% for request in pending_requests %}
+    <tr>
+        <td>{{ request.sender.username }}</td>
+        <td>{{ request.amount }}</td>
+        <td>
+            <a href="{% url 'respond_to_request' request.id 'accept' %}">Accept</a>
+            <a href="{% url 'respond_to_request' request.id 'reject' %}">Reject</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
 {% endblock %}
