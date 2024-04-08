@@ -27,7 +27,7 @@
     {% for request in pending_requests %}
     <tr>
         <td>{{ request.sender.username }}</td>
-        <td>{{ request.amount }}</td>
+        <td>{{ user_currency_symbol }}{{ request.amount }}</td>
         <td>
             <a href="{% url 'respond_to_request' request.id 'accept' %}">Accept</a>
             <a href="{% url 'respond_to_request' request.id 'reject' %}">Reject</a>

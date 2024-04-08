@@ -11,6 +11,8 @@ from django.conf import settings
 from payapp.utils import convert_currency
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.test import Client
+from payapp.constants import CURRENCY_SYMBOLS
+
 
 
 
@@ -91,30 +93,36 @@ def register(request):
 
 @login_required
 def profile(request):
+    user = request.user
+    user_currency = user.currency
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
+
     if request.method == 'POST':
-        user_form = CustomUserUpdateForm(request.POST, instance=request.user)
-        password_form = PasswordChangeForm(request.user, request.POST)
+        user_form = CustomUserUpdateForm(request.POST, instance=user)
+        password_form = PasswordChangeForm(user, request.POST)
         if 'update_profile' in request.POST and user_form.is_valid():
             user_form.save()
+            messages.success(request, 'Your profile was successfully updated.')
             return redirect('profile')
         elif 'change_password' in request.POST and password_form.is_valid():
             user = password_form.save()
             update_session_auth_hash(request, user)  # Important for updating session with new password
+            messages.success(request, 'Your password was successfully updated.')
             return redirect('profile')
     else:
-        user_form = CustomUserUpdateForm(instance=request.user)
-        password_form = PasswordChangeForm(request.user)
+        user_form = CustomUserUpdateForm(instance=user)
+        password_form = PasswordChangeForm(user)
     pending_requests = Transaction.objects.filter(
-        recipient=request.user,
+        recipient=user,
         status='PENDING',
         transaction_type='REQUEST'
-    ).exclude(sender=request.user)
+    ).exclude(sender=user)
 
-    # Include pending_requests in the context passed to the template
     context = {
         'user_form': user_form,
         'password_form': password_form,
-        'pending_requests': pending_requests  # Add this line
+        'pending_requests': pending_requests,
+        'user_currency_symbol': user_currency_symbol,  # Add this line
     }
     return render(request, 'register/profile.html', context)
 

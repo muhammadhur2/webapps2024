@@ -7,9 +7,9 @@
 {% for transaction in sent_transactions %}
     <p>
         {% if transaction.transaction_type == 'REQUEST' %}
-            Request payment: Payment to {{ transaction.sender.username }}: £{{ transaction.amount }} - {{ transaction.status }}
+            Request payment: Payment to {{ transaction.sender.username }}: {{ user_currency_symbol }}{{ transaction.amount }} - {{ transaction.status }}
         {% else %}
-            Payment to {{ transaction.recipient.username }}: £{{ transaction.amount }} - {{ transaction.status }}
+            Payment to {{ transaction.recipient.username }}: {{ user_currency_symbol }}{{ transaction.amount }} - {{ transaction.status }}
         {% endif %}
         <a href="{% url 'transaction_invoice' transaction.id %}">View Invoice</a>
     </p>
@@ -21,9 +21,9 @@
 {% for transaction in received_transactions %}
     <p>
         {% if transaction.transaction_type == 'REQUEST' and transaction.status == 'COMPLETED' %}
-            Payment received from {{ transaction.sender.username }}'s request: £{{ transaction.amount }}
+            Payment received from {{ transaction.sender.username }}'s request: {{ user_currency_symbol }}{{ transaction.amount }}
         {% elif transaction.transaction_type == 'PAYMENT' %}
-            Payment received from {{ transaction.sender.username }}: £{{ transaction.amount }}
+            Payment received from {{ transaction.sender.username }}: {{ user_currency_symbol }}{{ transaction.amount }}
         {% endif %}
         <a href="{% url 'transaction_invoice' transaction.id %}">View Invoice</a>
     </p>

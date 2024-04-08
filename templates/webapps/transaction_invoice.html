@@ -12,7 +12,7 @@
     <p><strong>From:</strong> {{ transaction.recipient.username }}</p>
     <p><strong>To:</strong> {{ transaction.sender.username }}</p>
     {% endif %}
-    <p><strong>Amount:</strong> £{{ transaction.amount }}</p>
+    <p><strong>Amount:</strong> {{ user_currency_symbol }}{{ transaction.amount }}</p> <!-- Adjusted -->
     <p><strong>Type:</strong> {{ transaction.get_transaction_type_display }}</p>
     <p><strong>Status:</strong> {{ transaction.get_status_display }}</p>
 </div>
