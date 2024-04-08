@@ -17,11 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from register.views import home  # Adjust this import based on where you placed the home view
+from django.conf import settings
+
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('register.urls')),  # Corrected: Include 'register.urls' at the root
     path('', include('payapp.urls')),
+    path('', include('register.urls')),  # Corrected: Include 'register.urls' at the root
     path('', home, name='home'),  # Add this line for the home page
 ]
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

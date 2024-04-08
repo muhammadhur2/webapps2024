@@ -60,16 +60,13 @@ def register(request):
             selected_currency = form.cleaned_data['currency']
             initial_balance_in_gbp = 1000
 
-            # Instead of using the requests library, you can use the Django test client
-            # or call the view directly since it's an internal service.
-            client = Client(SERVER_NAME='localhost')
+            # Use the Django test client for the conversion
+            client = Client()
             response = client.get(f'/conversion/GBP/{selected_currency}/{initial_balance_in_gbp}/')
 
             if response.status_code == 200:
-                # Assuming the conversion service returns a JSON object with 'converted_amount'
                 user.balance = response.json().get('converted_amount', initial_balance_in_gbp)
             else:
-                # Provide a message to the user that the conversion service is currently unavailable
                 messages.error(request, "The currency conversion service is currently unavailable. Please try again later.")
                 return render(request, 'register/register.html', {'form': form})
 
