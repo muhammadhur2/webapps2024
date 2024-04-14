@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'testserver']
 # Application definition
 
 INSTALLED_APPS = [
+    'django_extensions',
     'debug_toolbar',
     'django.contrib.admin',
     'django.contrib.auth',
