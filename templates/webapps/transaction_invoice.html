@@ -1,19 +1,65 @@
 {% extends 'base.html' %}
 
+{% block title %}Transaction Invoice{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Transaction Invoice</h2>
-    <p><strong>Transaction ID:</strong> {{ transaction.id }}</p>
-    <p><strong>Date:</strong> {{ transaction.created_at }}</p>
-    {% if transaction.get_transaction_type_display == 'Payment' %}
-    <p><strong>From:</strong> {{ transaction.sender.username }}</p>
-    <p><strong>To:</strong> {{ transaction.recipient.username }}</p>
-    {% else %}
-    <p><strong>From:</strong> {{ transaction.recipient.username }}</p>
-    <p><strong>To:</strong> {{ transaction.sender.username }}</p>
-    {% endif %}
-    <p><strong>Amount:</strong> {{ user_currency_symbol }}{{ transaction.amount }}</p> <!-- Adjusted -->
-    <p><strong>Type:</strong> {{ transaction.get_transaction_type_display }}</p>
-    <p><strong>Status:</strong> {{ transaction.get_status_display }}</p>
+
+
+<style>
+    @media print {
+        button { display: none; }  /* Hide buttons when printing */
+        nav, footer { display: none; }  /* Optionally hide navigation/footer */
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header text-center">
+            <h1 class="card-title">Transaction Invoice</h1>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <p><strong>Transaction ID:</strong> {{ transaction.id }}</p>
+                    <p><strong>Date:</strong> {{ transaction.created_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>Status:</strong> {{ transaction.get_status_display }}</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p><strong>Amount:</strong> {{ user_currency_symbol }}{{ transaction.amount | floatformat:2 }}</p>
+                    <p><strong>Type:</strong> {{ transaction.get_transaction_type_display }}</p>
+                </div>
+            </div>
+
+            {% if transaction.get_transaction_type_display == 'Payment' %}
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>From:</strong> {{ transaction.sender.username }}</p>
+                    <p><strong>Email:</strong> {{ transaction.sender.email }}</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p><strong>To:</strong> {{ transaction.recipient.username }}</p>
+                    <p><strong>Email:</strong> {{ transaction.recipient.email }}</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>From:</strong> {{ transaction.recipient.username }}</p>
+                    <p><strong>Email:</strong> {{ transaction.recipient.email }}</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p><strong>To:</strong> {{ transaction.sender.username }}</p>
+                    <p><strong>Email:</strong> {{ transaction.sender.email }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="text-center mt-5">
+                <button onclick="window.print();" class="btn btn-primary">Print Invoice</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+
 {% endblock %}

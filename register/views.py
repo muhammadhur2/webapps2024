@@ -25,35 +25,6 @@ from payapp.constants import CURRENCY_SYMBOLS
 
 def home(request):
     return HttpResponse("Welcome to WebApp 2024!")
-
-# def register(request):
-    # if request.method == 'POST':
-    #     form = CustomUserCreationForm(request.POST)
-    #     if form.is_valid():
-            
-    #         user = form.save(commit=False)  
-    #         selected_currency = form.cleaned_data['currency']
-    #         initial_balance_in_gbp = 1000  
-    #         user.balance = convert_currency(initial_balance_in_gbp, 'GBP', selected_currency)
-    #         user.currency = selected_currency
-    #         user.save()  
-
-    #         login(request, user)
-            
-    #         send_mail(
-    #             'Welcome to WebApp 2024!',
-    #             'Hello, thank you for registering with our app.',
-    #             settings.DEFAULT_FROM_EMAIL,
-    #             [user.email],
-    #             fail_silently=False,
-    #         )
-
-    #         return redirect('home')
-    # else:
-    #     form = CustomUserCreationForm()
-
-    # return render(request, 'register/register.html', {'form': form})
-
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)

@@ -147,8 +147,9 @@ def request_payment_view(request):
 
 
 def transaction_notifications(request):
-    user_currency = request.user.currency  # Assuming the user's preferred currency is stored in this attribute
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Default to '$' if currency not found
+    user = request.user
+    user_currency = user.currency
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
 
     sent_transactions = Transaction.objects.filter(
         Q(sender=request.user, transaction_type="PAYMENT") | 
@@ -158,12 +159,52 @@ def transaction_notifications(request):
         Q(recipient=request.user, transaction_type="PAYMENT") | 
         Q(sender=request.user, transaction_type="REQUEST")
     )
+    pending_requests = Transaction.objects.filter(
+        recipient=user,
+        status='PENDING',
+        transaction_type='REQUEST'
+    ).exclude(sender=user)
 
     return render(request, 'webapps/transaction_notifications.html', {
         'sent_transactions': sent_transactions,
         'received_transactions': received_transactions,
-        'user_currency_symbol': user_currency_symbol,  # Add this to the context
+        'user_currency_symbol': user_currency_symbol,
+        'pending_requests': pending_requests,
     })
+
+@login_required
+def respond_to_request(request, transaction_id, action):
+    transaction = get_object_or_404(Transaction, id=transaction_id, recipient=request.user, status='PENDING')
+
+    if action == 'accept':
+        # Logic for accepting the payment request
+        with db_transaction.atomic():
+            sender = transaction.sender
+            recipient = transaction.recipient
+
+            # Ensure that the recipient (Y) is the one making the payment to the sender (X), when accepting the request
+            if recipient.balance >= transaction.amount:  # Check if Y has enough balance
+                recipient.balance -= transaction.amount  # Deduct from Y's account
+                sender.balance += transaction.amount  # Add to X's account
+                recipient.save()
+                sender.save()
+
+                transaction.status = 'COMPLETED'  # Update the transaction status
+                transaction.save()
+
+                messages.success(request, "Payment request accepted.")
+            else:
+                messages.error(request, "You have insufficient funds.")
+    elif action == 'reject':
+        # Logic for rejecting the payment request
+        transaction.status = 'REJECTED'  # Update the transaction status
+        transaction.save()
+
+        messages.info(request, "Payment request rejected.")
+    else:
+        messages.error(request, "Invalid action.")
+
+    return redirect('profile')  # Redirect to the profile page or any other appropriate page
 
 @login_required
 def transaction_invoice(request, transaction_id):

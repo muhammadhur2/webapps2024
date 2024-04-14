@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Profile{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Edit Profile</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ user_form.as_p }}
-        <button type="submit" name="update_profile">Update Profile</button>
-    </form>
+<div class="container mt-5"> <!-- Margin-top for spacing below the navbar -->
 
-    <h2>Change Password</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ password_form.as_p }}
-        <button type="submit" name="change_password">Change Password</button>
-    </form>
+    <!-- Edit Profile Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">Edit Profile</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ user_form|crispy }} <!-- Using crispy to render the form -->
+                <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">Change Password</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ password_form|crispy }} <!-- Using crispy to render the form -->
+                <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
+            </form>
+        </div>
+    </div>
+
+    
+
+
 </div>
-
-<h2>Pending Payment Requests</h2>
-<table>
-    <tr>
-        <th>From</th>
-        <th>Amount</th>
-        <th>Actions</th>
-    </tr>
-    {% for request in pending_requests %}
-    <tr>
-        <td>{{ request.sender.username }}</td>
-        <td>{{ user_currency_symbol }}{{ request.amount }}</td>
-        <td>
-            <a href="{% url 'respond_to_request' request.id 'accept' %}">Accept</a>
-            <a href="{% url 'respond_to_request' request.id 'reject' %}">Reject</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
 {% endblock %}
