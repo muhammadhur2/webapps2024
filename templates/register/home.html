@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <!-- Account Balance Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Account Balance
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ user_currency_symbol }}{{ account_balance }}</h5>
+            <p class="card-text">Available balance in your account.</p>
+        </div>
+    </div>
+
+    <!-- Transaction History Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Recent Transactions
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for transaction in recent_transactions %}
+            <li class="list-group-item">
+                {% if transaction.transaction_type == 'REQUEST' and transaction.recipient.username == request.user.username %}
+    Request payment to {{ transaction.sender.username }}: {{ user_currency_symbol }}{{ transaction.amount }} - {{ transaction.get_status_display }}
+
+                {% elif transaction.transaction_type == 'PAYMENT' and transaction.sender.username == request.user.username %}
+                    Payment to {{ transaction.recipient.username }}: {{ user_currency_symbol }}{{ transaction.amount }} - {{ transaction.get_status_display }}
+                {% elif transaction.transaction_type == 'REQUEST' and transaction.sender.username == request.user.username %}
+                    Payment received from {{ transaction.sender.username }}'s request: {{ user_currency_symbol }}{{ transaction.amount }}
+                {% elif transaction.transaction_type == 'PAYMENT' and transaction.recipient.username == request.user.username %}
+                    Payment received from {{ transaction.sender.username }}: {{ user_currency_symbol }}{{ transaction.amount }}
+                {% endif %}
+                <a href="{% url 'transaction_invoice' transaction.id %}" class="btn btn-primary btn-sm float-right">View Invoice</a>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No recent transactions found.</li>
+            {% endfor %}
+        </ul>
+        <div class="card-footer">
+            <a href="{% url 'transaction_notifications' %}" class="btn btn-secondary">View All</a>
+        </div>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Make a Payment</h5>
+                    <p class="card-text">Send money to someone.</p>
+                    <a href="{% url 'make_payment' %}" class="btn btn-primary">Pay</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Request a Payment</h5>
+                    <p class="card-text">Request money from someone.</p>
+                    <a href="{% url 'request_payment' %}" class="btn btn-primary">Request</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Your Profile</h5>
+                    <p class="card-text">View and update your account details.</p>
+                    <a href="{% url 'profile' %}" class="btn btn-primary">Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

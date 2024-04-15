@@ -129,7 +129,7 @@ display:none
                 <a href="/profile" class="dropbtn">{{ user.first_name }} {{ user.last_name }}</a>
                 <i class="fa fa-angle-down" aria-hidden="true"></i>
                 <div class="dropdown-content">
-                  <a href="/logout">Logout</a>
+                  <a href="#" id="logout-link">Logout</a>
                   <a href="#">Account Balance: {{user.balance}}</a>
                 </div>
               </li>
@@ -154,6 +154,48 @@ display:none
 
     
 
+  <script>
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.getElementById('logout-link').addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent the default GET request
+
+        // Create a form dynamically
+        var form = document.createElement('form');
+        form.style.display = 'none'; // Hide the form
+        form.method = 'POST';
+        form.action = '{% url 'logout' %}'; // URL from Django URL name
+
+        // Get CSRF token from cookies
+        var csrfToken = getCookie('csrftoken');
+
+        // CSRF token field
+        var hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = 'csrfmiddlewaretoken';
+        hiddenField.value = csrfToken;
+        form.appendChild(hiddenField);
+
+        // Append the form to the body and submit it
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>

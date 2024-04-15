@@ -147,7 +147,7 @@ AUTH_USER_MODEL = 'register.CustomUser'
 
 LOGIN_URL = '/login/'
 
-LOGIN_REDIRECT_URL = '/profile/'
+LOGIN_REDIRECT_URL = '/'
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
