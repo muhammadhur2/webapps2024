@@ -13,6 +13,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.test import Client
 from payapp.constants import CURRENCY_SYMBOLS
 from django.db.models import Q
+from decimal import Decimal
 
 
 
@@ -27,26 +28,45 @@ from django.db.models import Q
 @login_required
 def home(request):
     user = request.user
-    # Get the current user's account balance, if available
-    account_balance = request.user.balance  # Assuming 'profile' has a 'balance' field
     user_currency = user.currency
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$') 
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
 
-    # Get the last 5 transactions for the current user
+    # Currency conversion client
+    client = Client()
+
+    # Helper function to convert currency
+    def convert_currency(amount):
+        if user_currency != "GBP":
+            response = client.get(f'/conversion/GBP/{user_currency}/{amount}/')
+            if response.status_code == 200:
+                return Decimal(response.json().get('converted_amount'))
+            else:
+                # Handle conversion failure
+                return None
+        return amount
+
+    # Fetch recent transactions and convert if necessary
     recent_transactions = Transaction.objects.filter(
-        Q(sender=request.user, transaction_type="PAYMENT") | 
-        Q(recipient=request.user, transaction_type="REQUEST") |
-        Q(recipient=request.user, transaction_type="PAYMENT") | 
-        Q(sender=request.user, transaction_type="REQUEST")
-    ).order_by('-created_at')[:5]  # Replace with actual field names
+        Q(sender=user, transaction_type="PAYMENT") | 
+        Q(recipient=user, transaction_type="REQUEST") |
+        Q(recipient=user, transaction_type="PAYMENT") | 
+        Q(sender=user, transaction_type="REQUEST")
+    ).order_by('-created_at')[:5]  # Ensure you have a 'created_at' field or equivalent
+
+    # Convert transaction amounts
+    for transaction in recent_transactions:
+        converted_amount = convert_currency(transaction.amount) or transaction.amount
+        transaction.amount = converted_amount  # Update the transaction amount to the converted amount for display
+
+    # Assuming 'user' model has a 'balance' field
+    account_balance = user.balance
 
     context = {
         'account_balance': account_balance,
         'recent_transactions': recent_transactions,
-        'user_currency_symbol': user_currency_symbol  # You may want to retrieve this from user profile settings
+        'user_currency_symbol': user_currency_symbol
     }
     return render(request, 'register/home.html', context)
-
 
 def register(request):
     if request.method == 'POST':

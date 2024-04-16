@@ -33,7 +33,7 @@
                 {% elif transaction.transaction_type == 'PAYMENT' and transaction.sender.username == request.user.username %}
                     Payment to {{ transaction.recipient.username }}: {{ user_currency_symbol }}{{ transaction.amount }} - {{ transaction.get_status_display }}
                 {% elif transaction.transaction_type == 'REQUEST' and transaction.sender.username == request.user.username %}
-                    Payment received from {{ transaction.sender.username }}'s request: {{ user_currency_symbol }}{{ transaction.amount }}
+                    Payment received from {{ transaction.recipient.username }} by request: {{ user_currency_symbol }}{{ transaction.amount }}
                 {% elif transaction.transaction_type == 'PAYMENT' and transaction.recipient.username == request.user.username %}
                     Payment received from {{ transaction.sender.username }}: {{ user_currency_symbol }}{{ transaction.amount }}
                 {% endif %}
