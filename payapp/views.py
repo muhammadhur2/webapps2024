@@ -95,7 +95,7 @@ def make_payment_view(request):
                 )
 
                 messages.success(request, "Payment made successfully.")
-                return redirect('webapps/make_payment.html')
+                return redirect('/')
             else:
                 messages.error(request, "Insufficient funds.")
     else:
