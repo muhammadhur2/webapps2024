@@ -120,7 +120,7 @@ def profile(request):
             return redirect('profile')
         elif 'change_password' in request.POST and password_form.is_valid():
             user = password_form.save()
-            update_session_auth_hash(request, user)  # Important for updating session with new password
+            update_session_auth_hash(request, user)  
             messages.success(request, 'Your password was successfully updated.')
             return redirect('profile')
     else:
@@ -136,7 +136,7 @@ def profile(request):
         'user_form': user_form,
         'password_form': password_form,
         'pending_requests': pending_requests,
-        'user_currency_symbol': user_currency_symbol,  # Add this line
+        'user_currency_symbol': user_currency_symbol,  
     }
     return render(request, 'register/profile.html', context)
 
@@ -146,31 +146,30 @@ def respond_to_request(request, transaction_id, action):
     transaction = get_object_or_404(Transaction, id=transaction_id, recipient=request.user, status='PENDING')
 
     if action == 'accept':
-        # Logic for accepting the payment request
+        
         with db_transaction.atomic():
             sender = transaction.sender
             recipient = transaction.recipient
 
-            # Ensure that the recipient (Y) is the one making the payment to the sender (X), when accepting the request
-            if recipient.balance >= transaction.amount:  # Check if Y has enough balance
-                recipient.balance -= transaction.amount  # Deduct from Y's account
-                sender.balance += transaction.amount  # Add to X's account
+            if recipient.balance >= transaction.amount:  
+                recipient.balance -= transaction.amount  
+                sender.balance += transaction.amount  
                 recipient.save()
                 sender.save()
 
-                transaction.status = 'COMPLETED'  # Update the transaction status
+                transaction.status = 'COMPLETED'  
                 transaction.save()
 
                 messages.success(request, "Payment request accepted.")
             else:
                 messages.error(request, "You have insufficient funds.")
     elif action == 'reject':
-        # Logic for rejecting the payment request
-        transaction.status = 'REJECTED'  # Update the transaction status
+
+        transaction.status = 'REJECTED'  
         transaction.save()
 
         messages.info(request, "Payment request rejected.")
     else:
         messages.error(request, "Invalid action.")
 
-    return redirect('profile')  # Redirect to the profile page or any other appropriate page
+    return redirect('profile')  

@@ -6,7 +6,6 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-<!-- Section: Design Block -->
 <section class="text-center text-lg-start">
   <style>
     .rounded-t-5 {
@@ -27,12 +26,11 @@
 
   <div class="card mb-3">
     <div class="row g-0 d-flex align-items-center">
-      <!-- Image Column -->
       <div class="col-lg-4 d-none d-lg-flex">
         <img src="{% static 'signup.jpg' %}" alt="Signup visual" class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" />
       </div>
       
-      <!-- Form Column -->
+      
       <div class="col-lg-8">
         <div class="card-body py-5 px-md-5">
           <form method="post" action="{% url 'register' %}">
@@ -45,6 +43,5 @@
     </div>
   </div>
 </section>
-<!-- Section: Design Block -->
 
 {% endblock %}

@@ -6,27 +6,27 @@
 {% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<div class="container mt-5"> <!-- Margin-top for spacing below the navbar -->
+<div class="container mt-5"> 
 
-    <!-- Edit Profile Section -->
+
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="card-title">Edit Profile</h2>
             <form method="post">
                 {% csrf_token %}
-                {{ user_form|crispy }} <!-- Using crispy to render the form -->
+                {{ user_form|crispy }} 
                 <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
             </form>
         </div>
     </div>
 
-    <!-- Change Password Section -->
+    
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="card-title">Change Password</h2>
             <form method="post">
                 {% csrf_token %}
-                {{ password_form|crispy }} <!-- Using crispy to render the form -->
+                {{ password_form|crispy }} 
                 <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
             </form>
         </div>

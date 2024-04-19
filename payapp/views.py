@@ -62,7 +62,6 @@ def make_payment_view(request):
             recipient = get_object_or_404(CustomUser, username=recipient_username)
 
             client = Client()
-            # Currency conversion if needed
             if request.user.currency != 'GBP':
                 response = client.get(f'/conversion/{request.user.currency}/GBP/{amount}/')
                 if response.status_code == 200:
@@ -74,8 +73,7 @@ def make_payment_view(request):
             if request.user.balance >= amount:
                 with db_transaction.atomic():
                     request.user.balance -= amount
-                    recipient_amount = amount  # Default to same currency, adjust below if needed
-                    # Convert amount for recipient if needed
+                    recipient_amount = amount  
                     if recipient.currency != 'GBP':
                         response = client.get(f'/conversion/GBP/{recipient.currency}/{amount1}/')
                         if response.status_code == 200:
@@ -109,10 +107,10 @@ def request_payment_view(request):
         form = PaymentRequestForm(request.POST)
         if form.is_valid():
             sender_username = form.cleaned_data['sender_username']
-            amount = Decimal(form.cleaned_data['amount'])  # Ensure amount is a Decimal for accuracy
+            amount = Decimal(form.cleaned_data['amount'])  
             sender = get_object_or_404(CustomUser, username=sender_username)
 
-            # Assume sender is the one who will pay, so we convert the currency to the sender's currency if needed
+            
             client = Client()
 
             if request.user.currency != 'GBP':
@@ -131,7 +129,7 @@ def request_payment_view(request):
                 status='PENDING'
             )
 
-            # Send an email notification to the recipient of the request
+            
             send_mail(
                 subject='Payment Request Received',
                 message=f'You have received a payment request of {sender.currency} {amount} from {request.user.username}.',
@@ -151,23 +149,22 @@ def request_payment_view(request):
 def transaction_notifications(request):
     user = request.user
     user_currency = user.currency
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  
 
-    # Currency conversion client
     client = Client()
 
-    # Helper function to convert currency
+    
     def convert_currency(amount):
         if user_currency != "GBP":
             response = client.get(f'/conversion/GBP/{user_currency}/{amount}/')
             if response.status_code == 200:
                 return Decimal(response.json().get('converted_amount'))
             else:
-                # Handle conversion failure
+                
                 return None
         return amount
 
-    # Fetch and convert transactions involving the user
+    
     sent_transactions = []
     received_transactions = []
     pending_requests = []
@@ -180,24 +177,24 @@ def transaction_notifications(request):
         else:
         
             converted_amount = convert_currency(transaction.amount) or transaction.amount
-            transaction.amount = converted_amount  # Update the transaction amount to the converted amount for display
-            
+            transaction.amount = converted_amount  
+             
             sent_transactions.append(transaction)
 
     for transaction in Transaction.objects.filter(Q(recipient=request.user, transaction_type="PAYMENT") | 
         Q(sender=request.user, transaction_type="REQUEST")):
         converted_amount = convert_currency(transaction.amount) or transaction.amount
-        transaction.amount = converted_amount  # Update the transaction amount to the converted amount for display
+        transaction.amount = converted_amount  
         received_transactions.append(transaction)
 
     for transaction in Transaction.objects.filter(Q(recipient=request.user, transaction_type="REQUEST")):
-    # Check if the transaction is a pending request and handle differently
+
         if transaction.transaction_type == 'REQUEST' and transaction.status == 'PENDING' and transaction.recipient.currency=="GBP":
-        # Directly append pending requests without converting currency
+
             pending_requests.append(transaction)
         elif transaction.transaction_type == 'REQUEST' and transaction.status == 'PENDING' and transaction.recipient.currency!="GBP":
             converted_amount = convert_currency(transaction.amount) or transaction.amount
-            transaction.amount = converted_amount  # Update the transaction amount to the converted amount for display
+            transaction.amount = converted_amount  
             pending_requests.append(transaction)          
 
 
@@ -216,7 +213,7 @@ def respond_to_request(request, transaction_id, action):
     transaction = get_object_or_404(Transaction, id=transaction_id, recipient=request.user, status='PENDING')
 
     if action == 'accept':
-        # Logic for accepting the payment request
+
         with db_transaction.atomic():
             sender = transaction.sender
             recipient = transaction.recipient
@@ -239,52 +236,52 @@ def respond_to_request(request, transaction_id, action):
 
 
 
-            # Ensure that the recipient (Y) is the one making the payment to the sender (X), when accepting the request
-            if recipient.balance >= recipient_amount:  # Check if Y has enough balance
-                recipient.balance -= recipient_amount  # Deduct from Y's account
-                sender.balance += sender_amount  # Add to X's account
+
+            if recipient.balance >= recipient_amount:  
+                recipient.balance -= recipient_amount  
+                sender.balance += sender_amount  
                 recipient.save()
                 sender.save()
 
-                transaction.status = 'COMPLETED'  # Update the transaction status
+                transaction.status = 'COMPLETED'  
                 transaction.save()
 
                 messages.success(request, "Payment request accepted.")
             else:
                 messages.error(request, "You have insufficient funds.")
     elif action == 'reject':
-        # Logic for rejecting the payment request
-        transaction.status = 'REJECTED'  # Update the transaction status
+
+        transaction.status = 'REJECTED'  
         transaction.save()
 
         messages.info(request, "Payment request rejected.")
     else:
         messages.error(request, "Invalid action.")
 
-    return redirect('/')  # Redirect to the profile page or any other appropriate page
+    return redirect('/')  
 
 @login_required
 def transaction_invoice(request, transaction_id):
     user_currency = request.user.currency
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Default to '$'
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  
     
     client = Client()
 
-    # Helper function to convert currency
+
     def convert_currency(amount):
         if user_currency != "GBP":
             response = client.get(f'/conversion/GBP/{user_currency}/{amount}/')
             if response.status_code == 200:
                 return Decimal(response.json().get('converted_amount'))
             else:
-                # Handle conversion failure
+
                 return None
         return amount
     try:
-        # Attempt to retrieve the transaction where the current user is either the sender or the recipient
+
         transaction = Transaction.objects.get(id=transaction_id, sender=request.user)
     except Transaction.DoesNotExist:
-        # If the transaction does not exist with the user as the sender, check if the user is the recipient
+
         transaction = get_object_or_404(Transaction, id=transaction_id, recipient=request.user)
 
     if user_currency != "GBP":
@@ -292,7 +289,7 @@ def transaction_invoice(request, transaction_id):
         if converted_amount is not None:
             transaction.amount = converted_amount
         else:
-            # Handle conversion failure, perhaps logging the error or notifying the user
+            
             pass    
 
     return render(request, 'webapps/transaction_invoice.html', {

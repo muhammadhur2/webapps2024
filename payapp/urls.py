@@ -11,5 +11,4 @@ urlpatterns = [
 
 
 
-    # Add other URLs as needed
 ]

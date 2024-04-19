@@ -6,13 +6,13 @@
 {% block title %}Make a Payment{% endblock %}
 
 {% block content %}
-<div class="container mt-5"> <!-- Margin-top for spacing below the navbar -->
+<div class="container mt-5"> 
     <div class="card">
         <div class="card-body">
             <h2 class="card-title">Make a Payment</h2>
             <form method="post">
                 {% csrf_token %}
-                {{ form|crispy }} <!-- Using crispy to render the form -->
+                {{ form|crispy }} 
                 <button type="submit" class="btn btn-primary">Send Payment</button>
             </form>
         </div>
