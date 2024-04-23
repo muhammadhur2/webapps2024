@@ -57,9 +57,11 @@ def make_payment_view(request):
     if request.method == 'POST':
         form = PaymentForm(request.POST)
         if form.is_valid():
-            recipient_username = form.cleaned_data['recipient_username']
+            recipient_email = form.cleaned_data['recipient_email']
             amount = Decimal(form.cleaned_data['amount'])
-            recipient = get_object_or_404(CustomUser, username=recipient_username)
+            amount1 = Decimal(form.cleaned_data['amount'])
+            
+            recipient = get_object_or_404(CustomUser, email=recipient_email)
 
             client = Client()
             if request.user.currency != 'GBP':
@@ -70,10 +72,10 @@ def make_payment_view(request):
                     messages.error(request, "Currency conversion service is currently unavailable. Please try again later.")
                     return render(request, 'webapps/make_payment.html', {'form': form})
 
-            if request.user.balance >= amount:
+            if request.user.balance >= amount1:
                 with db_transaction.atomic():
                     request.user.balance -= amount
-                    recipient_amount = amount  
+                    recipient_amount = amount1  
                     if recipient.currency != 'GBP':
                         response = client.get(f'/conversion/GBP/{recipient.currency}/{amount1}/')
                         if response.status_code == 200:
@@ -82,7 +84,7 @@ def make_payment_view(request):
                     recipient.balance += recipient_amount
                     request.user.save()
                     recipient.save()
-                    Transaction.objects.create(sender=request.user, recipient=recipient, amount=amount, transaction_type='PAYMENT', status='COMPLETED')
+                    Transaction.objects.create(sender=request.user, recipient=recipient, amount=amount1, transaction_type='PAYMENT', status='COMPLETED')
 
                 send_mail(
                     subject='Payment Sent',
@@ -114,11 +116,11 @@ def request_payment_view(request):
     if request.method == 'POST':
         form = PaymentRequestForm(request.POST)
         if form.is_valid():
-            sender_username = form.cleaned_data['sender_username']
+            sender_email = form.cleaned_data['sender_email']
             amount = Decimal(form.cleaned_data['amount'])
             amount1 = Decimal(form.cleaned_data['amount'])
             amount2 = Decimal(form.cleaned_data['amount'])              
-            sender = get_object_or_404(CustomUser, username=sender_username)
+            sender = get_object_or_404(CustomUser, email=sender_email)
 
             
             client = Client()
@@ -160,7 +162,7 @@ def request_payment_view(request):
                 subject='Payment Request Received',
                 message=f'You have sent a payment request of {request.user.currency} {amount1} to {sender.username}.',
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[sender.email],
+                recipient_list=[request.user.email],
                 fail_silently=False,
             )
 
@@ -190,6 +192,7 @@ def transaction_notifications(request):
                 return None
         return amount
 
+
     
     sent_transactions = []
     received_transactions = []
@@ -208,10 +211,11 @@ def transaction_notifications(request):
             sent_transactions.append(transaction)
 
     for transaction in Transaction.objects.filter(Q(recipient=request.user, transaction_type="PAYMENT") | 
-        Q(sender=request.user, transaction_type="REQUEST")):
+        Q(sender=request.user, transaction_type="REQUEST")& ~Q(status="PENDING")):
         converted_amount = convert_currency(transaction.amount) or transaction.amount
         transaction.amount = converted_amount  
         received_transactions.append(transaction)
+    
 
     for transaction in Transaction.objects.filter(Q(recipient=request.user, transaction_type="REQUEST")):
 
@@ -225,6 +229,11 @@ def transaction_notifications(request):
 
 
                 
+    sent_transactions = sorted(sent_transactions, key=lambda x: x.id)
+    received_transactions = sorted(received_transactions, key=lambda x: x.id)
+    pending_requests = sorted(pending_requests, key=lambda x: x.id)
+
+    
 
     return render(request, 'webapps/transaction_notifications.html', {
         'sent_transactions': sent_transactions,

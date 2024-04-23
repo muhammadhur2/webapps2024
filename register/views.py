@@ -50,7 +50,7 @@ def home(request):
         Q(sender=user, transaction_type="PAYMENT") | 
         Q(recipient=user, transaction_type="REQUEST") |
         Q(recipient=user, transaction_type="PAYMENT") | 
-        Q(sender=user, transaction_type="REQUEST")
+        Q(sender=request.user, transaction_type="REQUEST") & ~Q(status="PENDING")
     ).order_by('-created_at')[:5]  # Ensure you have a 'created_at' field or equivalent
 
     # Convert transaction amounts

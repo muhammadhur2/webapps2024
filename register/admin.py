@@ -24,7 +24,7 @@ class CustomUserAdmin(BaseUserAdmin):
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('Custom fields', {
             'classes': ('wide',),
-            'fields': ('email', 'currency', 'balance', 'password1', 'password2', 'is_staff', 'is_superuser'),
+            'fields': ('email', 'currency', 'balance', 'is_staff', 'is_superuser'),
         }),
     )
 
