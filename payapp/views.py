@@ -267,11 +267,6 @@ def respond_to_request(request, transaction_id, action):
                 if response.status_code == 200:
                     sender_amount = Decimal(response.json().get('converted_amount'))
 
-            
-
-
-
-
             if recipient.balance >= recipient_amount:  
                 recipient.balance -= recipient_amount  
                 sender.balance += sender_amount  

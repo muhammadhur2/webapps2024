@@ -29,36 +29,30 @@ from decimal import Decimal
 def home(request):
     user = request.user
     user_currency = user.currency
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  
 
-    # Currency conversion client
     client = Client()
 
-    # Helper function to convert currency
     def convert_currency(amount):
         if user_currency != "GBP":
             response = client.get(f'/conversion/GBP/{user_currency}/{amount}/')
             if response.status_code == 200:
                 return Decimal(response.json().get('converted_amount'))
             else:
-                # Handle conversion failure
                 return None
         return amount
 
-    # Fetch recent transactions and convert if necessary
     recent_transactions = Transaction.objects.filter(
         Q(sender=user, transaction_type="PAYMENT") | 
         Q(recipient=user, transaction_type="REQUEST") |
         Q(recipient=user, transaction_type="PAYMENT") | 
         Q(sender=request.user, transaction_type="REQUEST") & ~Q(status="PENDING")
-    ).order_by('-created_at')[:5]  # Ensure you have a 'created_at' field or equivalent
+    ).order_by('-created_at')[:5]  
 
-    # Convert transaction amounts
     for transaction in recent_transactions:
         converted_amount = convert_currency(transaction.amount) or transaction.amount
-        transaction.amount = converted_amount  # Update the transaction amount to the converted amount for display
+        transaction.amount = converted_amount  
 
-    # Assuming 'user' model has a 'balance' field
     account_balance = user.balance
 
     context = {
@@ -76,7 +70,6 @@ def register(request):
             selected_currency = form.cleaned_data['currency']
             initial_balance_in_gbp = 1000
 
-            # Use the Django test client for the conversion
             client = Client()
             response = client.get(f'/conversion/GBP/{selected_currency}/{initial_balance_in_gbp}/')
 
@@ -109,7 +102,7 @@ def register(request):
 def profile(request):
     user = request.user
     user_currency = user.currency
-    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  # Retrieve the symbol directly
+    user_currency_symbol = CURRENCY_SYMBOLS.get(user_currency, '$')  
 
     if request.method == 'POST':
         user_form = CustomUserUpdateForm(request.POST, instance=user)
