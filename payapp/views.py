@@ -92,6 +92,14 @@ def make_payment_view(request):
                     fail_silently=False,
                 )
 
+                send_mail(
+                    subject='Payment Recieved',
+                    message=f'You have recieved {recipient.currency} {recipient_amount} from {request.user.username}.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[recipient.email],
+                    fail_silently=False,
+                )
+
                 messages.success(request, "Payment made successfully.")
                 return redirect('/')
             else:
@@ -107,7 +115,9 @@ def request_payment_view(request):
         form = PaymentRequestForm(request.POST)
         if form.is_valid():
             sender_username = form.cleaned_data['sender_username']
-            amount = Decimal(form.cleaned_data['amount'])  
+            amount = Decimal(form.cleaned_data['amount'])
+            amount1 = Decimal(form.cleaned_data['amount'])
+            amount2 = Decimal(form.cleaned_data['amount'])              
             sender = get_object_or_404(CustomUser, username=sender_username)
 
             
@@ -117,6 +127,14 @@ def request_payment_view(request):
                 response = client.get(f'/conversion/{request.user.currency}/GBP/{amount}/')
                 if response.status_code == 200:
                     amount = Decimal(response.json().get('converted_amount'))
+                else:
+                    messages.error(request, "Currency conversion service is currently unavailable. Please try again later.")
+                    return render(request, 'webapps/request_payment.html', {'form': form})
+                
+            if sender.currency != 'GBP':
+                response = client.get(f'/conversion/{request.user.currency}/{sender.currency}/{amount}/')
+                if response.status_code == 200:
+                    amount2 = Decimal(response.json().get('converted_amount'))
                 else:
                     messages.error(request, "Currency conversion service is currently unavailable. Please try again later.")
                     return render(request, 'webapps/request_payment.html', {'form': form})
@@ -132,7 +150,15 @@ def request_payment_view(request):
             
             send_mail(
                 subject='Payment Request Received',
-                message=f'You have received a payment request of {sender.currency} {amount} from {request.user.username}.',
+                message=f'You have received a payment request of {sender.currency} {amount2} from {request.user.username}.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[sender.email],
+                fail_silently=False,
+            )
+
+            send_mail(
+                subject='Payment Request Received',
+                message=f'You have sent a payment request of {request.user.currency} {amount1} to {sender.username}.',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[sender.email],
                 fail_silently=False,
@@ -247,6 +273,23 @@ def respond_to_request(request, transaction_id, action):
                 transaction.save()
 
                 messages.success(request, "Payment request accepted.")
+
+                send_mail(
+                subject='Payment Received',
+                message=f'You have received a payment through request {sender.currency} {sender_amount} from {recipient.username}.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[sender.email],
+                fail_silently=False,
+                )
+
+                send_mail(
+                subject='Payment sent',
+                message=f'You have sent a request payment of {recipient.currency} {recipient_amount} to {sender.username}.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[sender.email],
+                fail_silently=False,
+                )
+                
             else:
                 messages.error(request, "You have insufficient funds.")
     elif action == 'reject':
